@@ -38,7 +38,7 @@ const LEGEND = [
 ];
 
 const METHOD_LABEL = { Cash: 'Cash', GCash: 'GCash', Maya: 'Maya', 'Bank Transfer': 'Bank Transfer', Other: 'Other' };
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = import.meta.env.VITE_API_URL || 'https://upahan-server-production.up.railway.app';
 
 export default function TenantPaymentHistory() {
   const navigate  = useNavigate();

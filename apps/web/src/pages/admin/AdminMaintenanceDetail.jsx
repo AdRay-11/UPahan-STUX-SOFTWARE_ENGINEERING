@@ -6,6 +6,8 @@ import StatusBadge from '../../components/StatusBadge';
 import api from '../../utils/api';
 import { formatDateTime, timeAgo, categoryLabel } from '../../utils/format';
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://upahan-server-production.up.railway.app';
+
 const InfoCard = ({ icon: Icon, iconColor, iconBg, label, value }) => (
   <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
     <div style={{ width: 40, height: 40, borderRadius: 10, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -126,9 +128,10 @@ export default function AdminMaintenanceDetail() {
               PHOTO EVIDENCE
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {req.photos.map((photo, i) => (
-                <img key={i} src={photo} alt="Evidence" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8, background: '#F0EEEB' }} />
-              ))}
+              {req.photos.map((photo, i) => {
+                const src = photo.startsWith('http') ? photo : `${API_URL}${photo}`;
+                return <img key={i} src={src} alt="Evidence" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8, background: '#F0EEEB' }} />;
+              })}
             </div>
           </div>
         )}
