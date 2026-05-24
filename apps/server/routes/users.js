@@ -5,6 +5,7 @@ const path    = require('path');
 const pool    = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { avatarUpload } = require('../middleware/upload');
+const { uploadFile } = require('../utils/supabaseStorage');
 
 // Admin: all users
 router.get('/', verifyToken, requireRole('admin'), async (req, res) => {
@@ -76,11 +77,11 @@ router.put('/me', verifyToken, async (req, res) => {
 // Upload profile photo
 router.post('/me/photo', verifyToken, avatarUpload, async (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
-  const filename = req.file.filename;
   try {
+    const photoUrl = await uploadFile(req.file.buffer, `avatars/${Date.now()}-${req.file.originalname}`, req.file.mimetype);
     const result = await pool.query(
       'UPDATE users SET profile_photo=$1 WHERE user_id=$2 RETURNING user_id, first_name, last_name, email, phone_number, role, profile_photo',
-      [filename, req.user.userId]
+      [photoUrl, req.user.userId]
     );
     res.json({ success: true, data: result.rows[0] });
   } catch {

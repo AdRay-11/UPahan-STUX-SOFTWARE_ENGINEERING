@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const path = require('path');
+const { uploadFile } = require('../utils/supabaseStorage');
 
 const getAllUnits = async (req, res) => {
   try {
@@ -204,13 +204,15 @@ const uploadUnitPhotos = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'No files uploaded.' });
     }
-    const insertPromises = req.files.map(file => {
-      const relativePath = `/uploads/units/${path.basename(file.path)}`;
-      return pool.query(
+    const photoUrls = await Promise.all(
+      req.files.map((f, i) => uploadFile(f.buffer, `units/${Date.now()}-${i}-${f.originalname}`, f.mimetype))
+    );
+    const insertPromises = photoUrls.map(url =>
+      pool.query(
         'INSERT INTO media (unit_id, file_path) VALUES ($1, $2) ON CONFLICT (file_path) DO NOTHING RETURNING *',
-        [id, relativePath]
-      );
-    });
+        [id, url]
+      )
+    );
     const results = await Promise.all(insertPromises);
     const photos = results.map(r => r.rows[0]).filter(Boolean);
     res.json({ success: true, message: 'Photos uploaded.', data: photos });

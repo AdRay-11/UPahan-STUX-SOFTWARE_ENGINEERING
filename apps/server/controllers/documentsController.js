@@ -1,7 +1,6 @@
 const pool = require('../config/db');
-const path = require('path');
-const fs = require('fs');
 const { sendNotification, getAdminUserId } = require('./notificationsController');
+const { uploadFile } = require('../utils/supabaseStorage');
 
 const submitId = async (req, res) => {
   try {
@@ -34,8 +33,12 @@ const submitId = async (req, res) => {
       });
     }
 
-    const frontImage = req.files.frontImage[0].filename;
-    const backImage  = req.files.backImage[0].filename;
+    const frontFile = req.files.frontImage[0];
+    const backFile  = req.files.backImage[0];
+    const [frontImage, backImage] = await Promise.all([
+      uploadFile(frontFile.buffer, `documents/${Date.now()}-front-${frontFile.originalname}`, frontFile.mimetype),
+      uploadFile(backFile.buffer,  `documents/${Date.now()}-back-${backFile.originalname}`,  backFile.mimetype),
+    ]);
 
     const result = await pool.query(
       `INSERT INTO documents
@@ -77,12 +80,14 @@ const uploadContract = async (req, res) => {
       return res.status(400).json({ success: false, message: 'unit_id and tenant_user_id are required.' });
     }
 
+    const contractUrl = await uploadFile(req.file.buffer, `documents/${Date.now()}-${req.file.originalname}`, req.file.mimetype);
+
     const result = await pool.query(
       `INSERT INTO documents
          (tenant_user_id, unit_id, document_type, contract_file, contract_start_date, contract_end_date, notes, status, uploaded_by)
        VALUES ($1,$2,'contract',$3,$4,$5,$6,'verified','admin')
        RETURNING *`,
-      [tenant_user_id, unit_id, req.file.filename, contract_start_date || null, contract_end_date || null, notes || null]
+      [tenant_user_id, unit_id, contractUrl, contract_start_date || null, contract_end_date || null, notes || null]
     );
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {

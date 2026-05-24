@@ -1,6 +1,6 @@
 const pool = require('../config/db');
-const path = require('path');
 const { sendNotification, getAdminUserId } = require('./notificationsController');
+const { uploadFile } = require('../utils/supabaseStorage');
 
 const getPayments = async (req, res) => {
   try {
@@ -232,7 +232,10 @@ const declarePayment = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'Please attach at least one proof of payment.' });
     }
-    const proofImages = JSON.stringify(req.files.map(f => `/uploads/payments/${path.basename(f.path)}`));
+    const fileUrls = await Promise.all(
+      req.files.map((f, i) => uploadFile(f.buffer, `payments/${Date.now()}-${i}-${f.originalname}`, f.mimetype))
+    );
+    const proofImages = JSON.stringify(fileUrls);
 
     const result = await pool.query(
       `INSERT INTO payments (tenant_id, unit_id, amount, payment_date, payment_status, month_covered,

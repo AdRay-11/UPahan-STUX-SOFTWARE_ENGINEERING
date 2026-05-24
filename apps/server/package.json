@@ -9,6 +9,7 @@
     "schema": "node db/runSchema.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
