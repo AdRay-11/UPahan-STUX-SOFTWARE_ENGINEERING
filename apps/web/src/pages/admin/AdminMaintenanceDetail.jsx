@@ -5,6 +5,7 @@ import AdminLayout from '../../components/AdminLayout';
 import StatusBadge from '../../components/StatusBadge';
 import api from '../../utils/api';
 import { formatDateTime, timeAgo, categoryLabel } from '../../utils/format';
+import ImageLightbox from '../../components/ImageLightbox';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://upahan-server-production.up.railway.app';
 
@@ -27,6 +28,7 @@ export default function AdminMaintenanceDetail() {
   const [req, setReq]         = useState(null);
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState(null);
 
   const load = async () => {
     try {
@@ -130,7 +132,7 @@ export default function AdminMaintenanceDetail() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {req.photos.map((photo, i) => {
                 const src = photo.startsWith('http') ? photo : `${API_URL}${photo}`;
-                return <img key={i} src={src} alt="Evidence" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8, background: '#F0EEEB' }} />;
+                return <img key={i} src={src} alt="Evidence" onClick={() => setLightboxSrc(src)} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8, background: '#F0EEEB', cursor: 'zoom-in' }} />;
               })}
             </div>
           </div>
@@ -174,6 +176,7 @@ export default function AdminMaintenanceDetail() {
           </div>
         )}
       </div>
+      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
     </AdminLayout>
   );
 }

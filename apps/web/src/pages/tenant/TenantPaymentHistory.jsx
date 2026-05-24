@@ -8,6 +8,7 @@ import PaymentDeclarationModal from '../../components/PaymentDeclarationModal';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { formatPeso, formatDate, formatMonthYear } from '../../utils/format';
+import ImageLightbox from '../../components/ImageLightbox';
 
 const STATUS_COLOR = {
   paid:             '#2E7D72',
@@ -49,6 +50,7 @@ export default function TenantPaymentHistory() {
   const [summary, setSummary]           = useState({ totalPaid: 0, totalPending: 0 });
   const [loading, setLoading]           = useState(true);
   const [activeTab, setActiveTab]       = useState('history');
+  const [lightboxSrc, setLightboxSrc]   = useState(null);
   const [showDeclare, setShowDeclare]   = useState(false);
 
   const load = useCallback((silent = false) => {
@@ -305,11 +307,11 @@ export default function TenantPaymentHistory() {
                                   📄 PDF {proofs.length > 1 ? idx + 1 : ''}
                                 </a>
                               ) : (
-                                <a key={idx} href={fullSrc} target="_blank" rel="noreferrer" style={{ flexShrink: 0 }}>
+                                <div key={idx} onClick={() => setLightboxSrc(fullSrc)} style={{ flexShrink: 0, cursor: 'zoom-in' }}>
                                   <img src={fullSrc} alt={`Proof ${idx + 1}`}
-                                    style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #E0DDD8', cursor: 'pointer' }}
+                                    style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #E0DDD8' }}
                                   />
-                                </a>
+                                </div>
                               );
                             })}
                           </div>
@@ -359,6 +361,7 @@ export default function TenantPaymentHistory() {
           initialType="full"
         />
       )}
+      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
     </TenantLayout>
   );
 }
