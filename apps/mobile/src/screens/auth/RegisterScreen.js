@@ -9,6 +9,14 @@ import { useAuth } from '../../context/AuthContext';
 import InputField from '../../components/InputField';
 import { COLORS } from '../../constants/colors';
 
+const passwordCriteria = [
+  { label: 'At least 8 characters',         test: (p) => p.length >= 8 },
+  { label: 'At least one uppercase letter',  test: (p) => /[A-Z]/.test(p) },
+  { label: 'At least one lowercase letter',  test: (p) => /[a-z]/.test(p) },
+  { label: 'At least one number',            test: (p) => /[0-9]/.test(p) },
+  { label: 'At least one special character', test: (p) => /[^A-Za-z0-9]/.test(p) },
+];
+
 export default function RegisterScreen({ route, navigation }) {
   const role      = route?.params?.role || 'tenant';
   const isAdmin   = role === 'admin';
@@ -20,6 +28,8 @@ export default function RegisterScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
+  const allCriteriaMet = passwordCriteria.every(c => c.test(form.password));
+
   const set = key => val => { setForm(f => ({ ...f, [key]: val })); setError(''); };
 
   const handleRegister = async () => {
@@ -30,7 +40,6 @@ export default function RegisterScreen({ route, navigation }) {
     if (phone && (phone.length !== 11 || !phone.startsWith('09'))) {
       setError('Phone must be 11 digits starting with 09.'); return;
     }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     setLoading(true);
     setError('');
     const result = await register({
@@ -41,7 +50,15 @@ export default function RegisterScreen({ route, navigation }) {
       password,
       role,
     });
-    if (!result.success) setError(result.message);
+    if (result.success) {
+      Alert.alert(
+        'Registration Successful',
+        'Please check your email to verify your account before logging in.',
+        [{ text: 'OK', onPress: () => navigation.navigate('Login', { role }) }]
+      );
+    } else {
+      setError(result.message || 'Registration failed.');
+    }
     setLoading(false);
   };
 
@@ -90,12 +107,26 @@ export default function RegisterScreen({ route, navigation }) {
           <InputField icon="mail-outline" placeholder="you@example.com" value={form.email} onChangeText={set('email')} keyboardType="email-address" />
 
           <Text style={s.label}>Password *</Text>
-          <InputField icon="lock-closed-outline" placeholder="••••••••" value={form.password} onChangeText={set('password')} secureTextEntry />
+          <InputField icon="lock-closed-outline" placeholder="Minimum 8 characters" value={form.password} onChangeText={set('password')} secureTextEntry />
+          {form.password.length > 0 && (
+            <View style={{ width: '100%', marginTop: 6, marginBottom: 4 }}>
+              {passwordCriteria.map((c, i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <Text style={{ color: c.test(form.password) ? '#2E7D32' : '#C62828', fontSize: 13 }}>
+                    {c.test(form.password) ? '✓' : '✗'}
+                  </Text>
+                  <Text style={{ color: c.test(form.password) ? '#2E7D32' : '#C62828', fontSize: 13 }}>
+                    {c.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           <TouchableOpacity
-            style={[s.btn, { backgroundColor: primary }, loading && { opacity: 0.65 }]}
+            style={[s.btn, { backgroundColor: primary }, (loading || !allCriteriaMet) && { opacity: 0.65 }]}
             onPress={handleRegister}
-            disabled={loading}
+            disabled={loading || !allCriteriaMet}
             activeOpacity={0.85}
           >
             {loading

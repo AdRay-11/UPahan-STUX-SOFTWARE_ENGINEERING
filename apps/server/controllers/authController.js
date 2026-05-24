@@ -78,9 +78,7 @@ const register = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id, first_name, last_name, email, phone_number, role, created_at`,
       [firstName, lastName, email.toLowerCase(), phoneNumber || null, hashed, role]
     );
-    const user = result.rows[0];
-    const token = generateToken(user);
-    res.status(201).json({ success: true, message: 'Account created successfully.', data: { user, token } });
+    res.status(201).json({ success: true, message: 'Registration successful. Please check your email to verify your account before logging in.' });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });

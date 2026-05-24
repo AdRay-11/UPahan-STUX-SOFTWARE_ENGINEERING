@@ -91,7 +91,7 @@ const PasswordField = ({ value, onChange, showPass, onToggle, accent, accentLigh
         type={showPass ? 'text' : 'password'}
         value={value}
         onChange={onChange}
-        placeholder="Minimum 6 characters"
+        placeholder="Minimum 8 characters"
         autoComplete="new-password"
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
@@ -115,6 +115,14 @@ const PasswordField = ({ value, onChange, showPass, onToggle, accent, accentLigh
   );
 };
 
+const passwordCriteria = [
+  { label: 'At least 8 characters',         test: (p) => p.length >= 8 },
+  { label: 'At least one uppercase letter',  test: (p) => /[A-Z]/.test(p) },
+  { label: 'At least one lowercase letter',  test: (p) => /[a-z]/.test(p) },
+  { label: 'At least one number',            test: (p) => /[0-9]/.test(p) },
+  { label: 'At least one special character', test: (p) => /[^A-Za-z0-9]/.test(p) },
+];
+
 // Maps server error messages to user-friendly text
 function friendlyError(msg) {
   if (!msg) return 'Something went wrong. Please try again.';
@@ -133,8 +141,11 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError]   = useState('');
-  const [showPass, setShowPass] = useState(false);
-  const [error, setError]       = useState('');
+  const [showPass, setShowPass]           = useState(false);
+  const [error, setError]                 = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const allCriteriaMet = passwordCriteria.every(c => c.test(form.password));
 
   const isAdmin     = role === 'admin';
   const accent      = isAdmin ? '#2E7D72' : '#3A7BD5';
@@ -171,14 +182,12 @@ export default function RegisterPage() {
     if (!firstName || !lastName || !email || !password) {
       setError('Please fill in all required fields.'); return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.'); return;
-    }
     if (!validatePhone()) return;
 
     const result = await register({ ...form, phoneNumber, role });
     if (result.success) {
-      navigate(isAdmin ? '/admin' : '/tenant', { replace: true });
+      setSuccessMessage('Registration successful! Please check your email to verify your account.');
+      setTimeout(() => navigate(`/login/${role}`, { replace: true }), 3000);
     } else {
       setError(friendlyError(result.message));
     }
@@ -210,6 +219,11 @@ export default function RegisterPage() {
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {successMessage && (
+            <div style={{ background: '#E8F5E9', border: '1px solid #2E7D32', borderRadius: 8, padding: '10px 14px', color: '#2E7D32', fontSize: 13, fontFamily: 'Inter' }}>
+              {successMessage}
+            </div>
+          )}
           {error && (
             <div style={{ background: '#FDEEEE', border: '1px solid #D64045', borderRadius: 8, padding: '10px 14px', color: '#D64045', fontSize: 13, fontFamily: 'Inter' }}>
               {error}
@@ -263,20 +277,30 @@ export default function RegisterPage() {
               accent={accent}
               accentLight={accentLight}
             />
+            {form.password.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                {passwordCriteria.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, marginBottom: 4, color: c.test(form.password) ? '#2E7D32' : '#C62828' }}>
+                    <span>{c.test(form.password) ? '✓' : '✗'}</span>
+                    <span>{c.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <button
-            type="submit" disabled={loading}
+            type="submit" disabled={loading || !allCriteriaMet}
             style={{
               marginTop: 4, height: 52, borderRadius: 8,
-              background: loading ? '#888888' : accent,
+              background: (loading || !allCriteriaMet) ? '#888888' : accent,
               color: 'white', border: 'none', width: '100%',
-              cursor: loading ? 'not-allowed' : 'pointer',
+              cursor: (loading || !allCriteriaMet) ? 'not-allowed' : 'pointer',
               fontFamily: 'Inter', fontWeight: 600, fontSize: 14, letterSpacing: '0.04em',
-              transition: 'all 150ms ease', opacity: loading ? 0.6 : 1,
+              transition: 'all 150ms ease', opacity: (loading || !allCriteriaMet) ? 0.6 : 1,
             }}
-            onMouseOver={e => { if (!loading) e.currentTarget.style.background = accentDark; }}
-            onMouseOut={e => { if (!loading) e.currentTarget.style.background = accent; }}
+            onMouseOver={e => { if (!loading && allCriteriaMet) e.currentTarget.style.background = accentDark; }}
+            onMouseOut={e => { if (!loading && allCriteriaMet) e.currentTarget.style.background = accent; }}
           >
             {loading ? 'Creating Account...' : 'COMPLETE REGISTRATION'}
           </button>

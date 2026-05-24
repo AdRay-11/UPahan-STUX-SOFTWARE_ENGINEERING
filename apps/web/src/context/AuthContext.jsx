@@ -74,11 +74,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await api.post('/auth/register', data);
-      const { user: userData, token } = res.data.data;
-      localStorage.setItem('upahan_token', token);
-      localStorage.setItem('upahan_user', JSON.stringify(userData));
-      setUser(userData);
-      return { success: true, user: userData };
+      return { success: true, message: res.data.message };
     } catch (err) {
       return { success: false, message: err.response?.data?.message || 'Registration failed.' };
     } finally {
